@@ -1,0 +1,32 @@
+name: Validate and package extension
+
+on:
+  push:
+    branches: ['main', 'master']
+  pull_request:
+    branches: ['main', 'master']
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Validate JSON and JS syntax
+        run: |
+          set -e
+          node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))"
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Package extension
+        run: zip -r tw-uploader-extension.zip manifest.json src icons
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tw-uploader-extension
+          path: tw-uploader-extension.zip

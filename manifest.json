@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Toxic Donut Uploader",
+  "version": "1.0.0",
+  "description": "Uploadt Tribal Wars scriptdata automatisch naar het Toxic Donut portaal",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://*.tribalwars.nl/*",
+    "https://api.toxicdonut.dev/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.tribalwars.nl/game.php*"],
+      "js": ["src/shared/constants.js", "src/content/scanner.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Toxic Donut Uploader"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,8 @@
+*.zip
+.DS_Store
+.idea
+node_modules
+.claude/
+CLAUDE.md
+.env
+.env.*
