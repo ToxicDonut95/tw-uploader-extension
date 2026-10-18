@@ -45,6 +45,8 @@
         }
         if (reply.accepted) {
           markAccepted(element);
+        } else if (reply.paused) {
+          return;
         } else {
           markFailed(element, reply.error || tdText('errorUnknown'));
         }

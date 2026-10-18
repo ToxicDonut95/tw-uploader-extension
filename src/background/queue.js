@@ -128,6 +128,36 @@ export async function updateBadge() {
   }
 }
 
+let queueLock = Promise.resolve();
+
+function withQueue(mutator) {
+  const run = queueLock.then(async function () {
+    const items = await readStorage(TD.StorageKeys.Queue, []);
+    const outcome = await mutator(items);
+    if (outcome && outcome.changed === false) {
+      return outcome;
+    }
+    const saved = await writeStorage(TD.StorageKeys.Queue, items);
+    return Object.assign({ saved }, outcome || {});
+  });
+  queueLock = run.catch(function () {
+  });
+  return run;
+}
+
+function updateItem(itemId, changes) {
+  return withQueue(function (items) {
+    const item = items.find(function (candidate) {
+      return candidate.id === itemId;
+    });
+    if (!item) {
+      return { changed: false };
+    }
+    Object.assign(item, changes);
+    return { changed: true, item: Object.assign({}, item) };
+  });
+}
+
 export async function enqueue(envelope, elementId) {
   if (!envelope || typeof envelope !== 'object') {
     return { accepted: false, error: text('errorInvalidEnvelope') };
@@ -139,36 +169,40 @@ export async function enqueue(envelope, elementId) {
     return { accepted: false, error: text('errorEnvelopeMissingServer') };
   }
 
-  const items = await readStorage(TD.StorageKeys.Queue, []);
   const id = extractItemId(envelope, elementId);
   const hash = buildHash(envelope);
 
-  const duplicate = items.find(function (item) {
-    return item.id === id || item.hash === hash;
+  const outcome = await withQueue(function (items) {
+    const duplicate = items.find(function (item) {
+      return item.id === id || item.hash === hash;
+    });
+    if (duplicate) {
+      return { changed: false, duplicate: true };
+    }
+
+    dropForCapacity(items);
+
+    items.push({
+      id,
+      hash,
+      script: envelope.script,
+      serverUrl: envelope.serverUrl,
+      world: envelope.world,
+      playerId: envelope.playerId,
+      envelope,
+      attempts: 0,
+      nextAttemptAt: 0,
+      status: TD.UploadStatus.Pending,
+      error: null,
+      createdAt: Date.now()
+    });
+    return { changed: true };
   });
-  if (duplicate) {
+
+  if (outcome.duplicate) {
     return { accepted: true, error: null };
   }
-
-  dropForCapacity(items);
-
-  items.push({
-    id,
-    hash,
-    script: envelope.script,
-    serverUrl: envelope.serverUrl,
-    world: envelope.world,
-    playerId: envelope.playerId,
-    envelope,
-    attempts: 0,
-    nextAttemptAt: 0,
-    status: TD.UploadStatus.Pending,
-    error: null,
-    createdAt: Date.now()
-  });
-
-  const saved = await writeStorage(TD.StorageKeys.Queue, items);
-  if (!saved) {
+  if (!outcome.saved) {
     return { accepted: false, error: text('errorQueueSave') };
   }
   await updateBadge();
@@ -176,24 +210,25 @@ export async function enqueue(envelope, elementId) {
 }
 
 export async function resetNoAccountItems(serverUrl, world, playerId) {
-  const items = await readStorage(TD.StorageKeys.Queue, []);
-  let changed = false;
-  for (const item of items) {
-    if (item.status !== TD.UploadStatus.NoAccount) continue;
-    if (!serverMatches(item.serverUrl, serverUrl)) continue;
-    if (item.world !== world) continue;
-    if (String(item.playerId) !== String(playerId)) continue;
-    item.status = TD.UploadStatus.Pending;
-    item.attempts = 0;
-    item.nextAttemptAt = 0;
-    item.error = null;
-    changed = true;
-  }
-  if (changed) {
-    await writeStorage(TD.StorageKeys.Queue, items);
+  const outcome = await withQueue(function (items) {
+    let changed = false;
+    for (const item of items) {
+      if (item.status !== TD.UploadStatus.NoAccount) continue;
+      if (!serverMatches(item.serverUrl, serverUrl)) continue;
+      if (item.world !== world) continue;
+      if (String(item.playerId) !== String(playerId)) continue;
+      item.status = TD.UploadStatus.Pending;
+      item.attempts = 0;
+      item.nextAttemptAt = 0;
+      item.error = null;
+      changed = true;
+    }
+    return { changed };
+  });
+  if (outcome.changed) {
     await updateBadge();
   }
-  return changed;
+  return outcome.changed === true;
 }
 
 function findVerifiedAccount(accounts, serverUrl, world, playerId) {
@@ -207,89 +242,103 @@ function findVerifiedAccount(accounts, serverUrl, world, playerId) {
 }
 
 let flushing = false;
+let flushRequested = false;
 
 export async function flush() {
-  if (flushing) return;
+  if (flushing) {
+    flushRequested = true;
+    return;
+  }
   flushing = true;
   try {
-    const settings = await readStorage(TD.StorageKeys.Settings, {});
-    if (settings && settings.autoUploadEnabled === false) return;
-
-    const items = await readStorage(TD.StorageKeys.Queue, []);
-    const accounts = await readStorage(TD.StorageKeys.Accounts, []);
-    const now = Date.now();
-    let queueChanged = false;
-    let accountsChanged = false;
-
-    for (const item of items) {
-      if (item.status === TD.UploadStatus.Uploading) {
-        item.status = TD.UploadStatus.Pending;
-        queueChanged = true;
-      }
-    }
-
-    for (const item of items) {
-      if (item.status !== TD.UploadStatus.Pending) continue;
-      if (item.nextAttemptAt && item.nextAttemptAt > now) continue;
-
-      const account = findVerifiedAccount(accounts, item.serverUrl, item.world, item.playerId);
-      if (!account) {
-        item.status = TD.UploadStatus.NoAccount;
-        item.error = text('errorNoVerifiedAccount');
-        queueChanged = true;
-        await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: item.status, error: item.error });
-        continue;
-      }
-
-      item.status = TD.UploadStatus.Uploading;
-      await writeStorage(TD.StorageKeys.Queue, items);
-
-      const result = await api.uploadEnvelope(item.envelope, account.token);
-      queueChanged = true;
-
-      if (result.status === 201) {
-        item.status = TD.UploadStatus.Done;
-        item.error = null;
-      } else if (result.status === 401) {
-        account.status = TD.AccountStatus.Expired;
-        accountsChanged = true;
-        item.status = TD.UploadStatus.NoAccount;
-        item.nextAttemptAt = 0;
-        item.error = text('errorSessionExpired');
-      } else if (result.status === 403) {
-        account.status = TD.AccountStatus.Expired;
-        accountsChanged = true;
-        item.status = TD.UploadStatus.NoAccount;
-        item.error = text('errorTokenInvalid');
-      } else if (result.status >= 400 && result.status < 500) {
-        item.status = TD.UploadStatus.Failed;
-        item.error = result.error || text('errorUploadRejected');
-      } else {
-        item.attempts = (item.attempts || 0) + 1;
-        if (item.attempts > TD.BackoffMs.length) {
-          item.status = TD.UploadStatus.Failed;
-          item.error = result.error || text('errorUploadGaveUp');
-        } else {
-          item.status = TD.UploadStatus.Pending;
-          item.nextAttemptAt = Date.now() + TD.BackoffMs[item.attempts - 1];
-          item.error = result.error || text('errorTemporary');
-          continue;
-        }
-      }
-
-      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: item.status, error: item.error });
-    }
-
-    if (queueChanged) {
-      await writeStorage(TD.StorageKeys.Queue, items);
-    }
-    if (accountsChanged) {
-      await writeStorage(TD.StorageKeys.Accounts, accounts);
-    }
-    if (queueChanged) {
-      await updateBadge();
-    }
+    do {
+      flushRequested = false;
+      await flushOnce();
+    } while (flushRequested);
   } finally {
     flushing = false;
   }
+}
+
+async function flushOnce() {
+  const settings = await readStorage(TD.StorageKeys.Settings, {});
+  if (settings && settings.autoUploadEnabled === false) return;
+
+  const accounts = await readStorage(TD.StorageKeys.Accounts, []);
+  const now = Date.now();
+  let accountsChanged = false;
+
+  const snapshot = await withQueue(function (items) {
+    for (const item of items) {
+      if (item.status === TD.UploadStatus.Uploading) {
+        item.status = TD.UploadStatus.Pending;
+      }
+    }
+    return {
+      changed: true,
+      dueItems: items
+        .filter(function (item) {
+          return item.status === TD.UploadStatus.Pending && !(item.nextAttemptAt && item.nextAttemptAt > now);
+        })
+        .map(function (item) {
+          return Object.assign({}, item);
+        })
+    };
+  });
+
+  for (const item of snapshot.dueItems) {
+    const account = findVerifiedAccount(accounts, item.serverUrl, item.world, item.playerId);
+    if (!account) {
+      const error = text('errorNoVerifiedAccount');
+      await updateItem(item.id, { status: TD.UploadStatus.NoAccount, error });
+      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: TD.UploadStatus.NoAccount, error });
+      continue;
+    }
+
+    await updateItem(item.id, { status: TD.UploadStatus.Uploading });
+
+    const result = await api.uploadEnvelope(item.envelope, account.token);
+    const changes = {};
+
+    if (result.status === 201) {
+      changes.status = TD.UploadStatus.Done;
+      changes.error = null;
+    } else if (result.status === 401) {
+      account.status = TD.AccountStatus.Expired;
+      accountsChanged = true;
+      changes.status = TD.UploadStatus.NoAccount;
+      changes.nextAttemptAt = 0;
+      changes.error = text('errorSessionExpired');
+    } else if (result.status === 403) {
+      account.status = TD.AccountStatus.Expired;
+      accountsChanged = true;
+      changes.status = TD.UploadStatus.NoAccount;
+      changes.error = text('errorTokenInvalid');
+    } else if (result.status >= 400 && result.status < 500) {
+      changes.status = TD.UploadStatus.Failed;
+      changes.error = result.error || text('errorUploadRejected');
+    } else {
+      const attempts = (item.attempts || 0) + 1;
+      changes.attempts = attempts;
+      if (attempts > TD.BackoffMs.length) {
+        changes.status = TD.UploadStatus.Failed;
+        changes.error = result.error || text('errorUploadGaveUp');
+      } else {
+        changes.status = TD.UploadStatus.Pending;
+        changes.nextAttemptAt = Date.now() + TD.BackoffMs[attempts - 1];
+        changes.error = result.error || text('errorTemporary');
+      }
+    }
+
+    await updateItem(item.id, changes);
+
+    if (changes.status !== TD.UploadStatus.Pending) {
+      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: changes.status, error: changes.error });
+    }
+  }
+
+  if (accountsChanged) {
+    await writeStorage(TD.StorageKeys.Accounts, accounts);
+  }
+  await updateBadge();
 }

@@ -51,6 +51,11 @@ async function handleUpload(message) {
     envelope.serverUrl = message.origin;
   }
 
+  const settings = await queue.readStorage(TD.StorageKeys.Settings, {});
+  if (settings && settings.autoUploadEnabled === false) {
+    return { accepted: false, paused: true, error: null };
+  }
+
   const result = await queue.enqueue(envelope, message.elementId);
   if (result.accepted) {
     scheduleFlush();
