@@ -186,9 +186,17 @@ button:hover {
   border-radius: 3px;
 }
 
+.add-form select {
+  flex: 1;
+  padding: 3px 6px;
+  border: 1px solid #ccc2ae;
+  border-radius: 3px;
+  background: #fff;
+}
+
 .log-row {
   display: grid;
-  grid-template-columns: 52px 1fr 52px 84px;
+  grid-template-columns: 52px 1fr 62px 52px 84px;
   gap: 6px;
   padding: 3px 0;
   border-bottom: 1px solid #efe9dd;

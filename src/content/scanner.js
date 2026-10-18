@@ -33,7 +33,7 @@
 
     let sent = false;
     try {
-      chrome.runtime.sendMessage({ type: TD.MessageType.Upload, elementId, envelope }, function (reply) {
+      chrome.runtime.sendMessage({ type: TD.MessageType.Upload, elementId, envelope, origin: location.origin }, function (reply) {
         inFlight.delete(flightKey);
         if (chrome.runtime.lastError) {
           markFailed(element, chrome.runtime.lastError.message || 'Geen verbinding met extensie');

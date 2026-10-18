@@ -25,7 +25,42 @@ export async function writeStorage(key, value) {
 }
 
 function buildHash(envelope) {
-  return [envelope.world, envelope.playerId, envelope.script, envelope.exportedAt].join('|');
+  return [envelope.serverUrl, envelope.world, envelope.playerId, envelope.script, envelope.exportedAt].join('|');
+}
+
+export function normalizeServerUrl(serverUrl) {
+  if (typeof serverUrl !== 'string') return '';
+  const trimmed = serverUrl.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  try {
+    return new URL(trimmed).origin.toLowerCase();
+  } catch (urlError) {
+    return trimmed.toLowerCase();
+  }
+}
+
+export function serverMatches(serverUrl, originUrl) {
+  const serverHost = hostOf(serverUrl);
+  const originHost = hostOf(originUrl);
+  if (!serverHost || !originHost) return false;
+  if (serverHost === originHost) return true;
+
+  return coversHost(serverHost, originHost) || coversHost(originHost, serverHost);
+}
+
+function coversHost(host, marketHost) {
+  const domain = marketHost.startsWith('www.') ? marketHost.slice(4) : marketHost;
+  return host === domain || host.endsWith('.' + domain);
+}
+
+function hostOf(url) {
+  const normalized = normalizeServerUrl(url);
+  if (!normalized) return '';
+  try {
+    return new URL(normalized).hostname.toLowerCase();
+  } catch (urlError) {
+    return '';
+  }
 }
 
 function extractItemId(envelope, elementId) {
@@ -98,6 +133,9 @@ export async function enqueue(envelope, elementId) {
   if (!envelope.script || !envelope.world || envelope.playerId === undefined || envelope.playerId === null) {
     return { accepted: false, error: 'Envelope mist script, world of playerId' };
   }
+  if (!normalizeServerUrl(envelope.serverUrl)) {
+    return { accepted: false, error: 'Envelope mist serverUrl, werk het script bij' };
+  }
 
   const items = await readStorage(TD.StorageKeys.Queue, []);
   const id = extractItemId(envelope, elementId);
@@ -116,6 +154,7 @@ export async function enqueue(envelope, elementId) {
     id,
     hash,
     script: envelope.script,
+    serverUrl: envelope.serverUrl,
     world: envelope.world,
     playerId: envelope.playerId,
     envelope,
@@ -134,11 +173,12 @@ export async function enqueue(envelope, elementId) {
   return { accepted: true, error: null };
 }
 
-export async function resetNoAccountItems(world, playerId) {
+export async function resetNoAccountItems(serverUrl, world, playerId) {
   const items = await readStorage(TD.StorageKeys.Queue, []);
   let changed = false;
   for (const item of items) {
     if (item.status !== TD.UploadStatus.NoAccount) continue;
+    if (!serverMatches(item.serverUrl, serverUrl)) continue;
     if (item.world !== world) continue;
     if (String(item.playerId) !== String(playerId)) continue;
     item.status = TD.UploadStatus.Pending;
@@ -154,9 +194,10 @@ export async function resetNoAccountItems(world, playerId) {
   return changed;
 }
 
-function findVerifiedAccount(accounts, world, playerId) {
+function findVerifiedAccount(accounts, serverUrl, world, playerId) {
   return accounts.find(function (account) {
     return account.status === TD.AccountStatus.Verified &&
+      serverMatches(account.serverUrl, serverUrl) &&
       account.world === world &&
       String(account.playerId) === String(playerId) &&
       account.token;
@@ -182,12 +223,12 @@ export async function flush() {
       if (item.status !== TD.UploadStatus.Pending) continue;
       if (item.nextAttemptAt && item.nextAttemptAt > now) continue;
 
-      const account = findVerifiedAccount(accounts, item.world, item.playerId);
+      const account = findVerifiedAccount(accounts, item.serverUrl, item.world, item.playerId);
       if (!account) {
         item.status = TD.UploadStatus.NoAccount;
         item.error = 'Geen geverifieerd account voor deze wereld en speler';
         queueChanged = true;
-        await appendLog({ timestamp: Date.now(), script: item.script, world: item.world, status: item.status, error: item.error });
+        await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: item.status, error: item.error });
         continue;
       }
 
@@ -218,7 +259,7 @@ export async function flush() {
         }
       }
 
-      await appendLog({ timestamp: Date.now(), script: item.script, world: item.world, status: item.status, error: item.error });
+      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: item.status, error: item.error });
     }
 
     if (queueChanged) {

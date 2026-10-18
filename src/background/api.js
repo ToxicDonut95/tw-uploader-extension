@@ -1,21 +1,17 @@
 import '../shared/constants.js';
 
-async function postJson(path, body, token) {
-  const headers = { 'Content-Type': 'application/json' };
+function requestHeaders(token, withBody) {
+  const headers = { [globalThis.TD.CLIENT_HEADER]: globalThis.TD.CLIENT_NAME };
+  if (withBody) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) {
     headers.Authorization = 'Bearer ' + token;
   }
-  let response;
-  try {
-    response = await fetch(globalThis.TD.API_BASE + path, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
-  } catch (networkError) {
-    return { status: 0, response: null, error: 'Netwerkfout: ' + (networkError && networkError.message ? networkError.message : String(networkError)) };
-  }
+  return headers;
+}
 
+async function readResponse(response) {
   let text = '';
   let parsed = null;
   try {
@@ -39,14 +35,33 @@ async function postJson(path, body, token) {
   return { status: response.status, response: parsed, error: message };
 }
 
-export function requestAccess(playerName, world) {
-  return postJson('/api/v1.0/portal/access/request', { playerName, world });
+async function send(path, method, body, token) {
+  let response;
+  try {
+    response = await fetch(globalThis.TD.API_BASE + path, {
+      method,
+      headers: requestHeaders(token, body !== undefined),
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+  } catch (networkError) {
+    return { status: 0, response: null, error: 'Netwerkfout: ' + (networkError && networkError.message ? networkError.message : String(networkError)) };
+  }
+
+  return readResponse(response);
 }
 
-export function verifyAccess(accessId, verifyToken) {
-  return postJson('/api/v1.0/portal/access/verify', { accessId, verifyToken });
+export function getServers() {
+  return send('/api/v1.0/portal/servers', 'GET');
+}
+
+export function requestAccess(serverUrl, world, playerName, token) {
+  return send('/api/v1.0/portal/access/request', 'POST', { serverUrl, world, playerName }, token);
+}
+
+export function verifyAccess(accessId, verifyToken, token) {
+  return send('/api/v1.0/portal/access/verify', 'POST', { accessId, verifyToken }, token);
 }
 
 export function uploadEnvelope(envelope, token) {
-  return postJson('/api/v1.0/portal/upload', envelope, token);
+  return send('/api/v1.0/portal/upload', 'POST', envelope, token);
 }

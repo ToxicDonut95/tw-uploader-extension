@@ -44,7 +44,12 @@ async function findAccountByAccessId(accessId) {
 }
 
 async function handleUpload(message) {
-  const result = await queue.enqueue(message.envelope, message.elementId);
+  const envelope = message.envelope && typeof message.envelope === 'object' ? message.envelope : null;
+  if (envelope && !envelope.serverUrl && message.origin) {
+    envelope.serverUrl = message.origin;
+  }
+
+  const result = await queue.enqueue(envelope, message.elementId);
   if (result.accepted) {
     scheduleFlush();
   }
@@ -52,13 +57,17 @@ async function handleUpload(message) {
 }
 
 async function handleRequestAccess(message) {
+  const serverUrl = queue.normalizeServerUrl(message.serverUrl);
   const world = typeof message.world === 'string' ? message.world.trim() : '';
   const playerName = typeof message.playerName === 'string' ? message.playerName.trim() : '';
+  if (!serverUrl) {
+    return { response: null, error: 'Kies een server' };
+  }
   if (!world || !playerName) {
     return { response: null, error: 'Vul wereld en spelersnaam in' };
   }
 
-  const result = await api.requestAccess(playerName, world);
+  const result = await api.requestAccess(serverUrl, world, playerName, message.token);
   if (result.error || !result.response) {
     return { response: null, error: result.error || 'Aanvraag mislukt' };
   }
@@ -66,10 +75,14 @@ async function handleRequestAccess(message) {
   const accessData = result.response;
   const accounts = await queue.readStorage(TD.StorageKeys.Accounts, []);
   let account = accounts.find(function (candidate) {
-    return candidate.world === accessData.world && String(candidate.playerId) === String(accessData.playerId);
+    return queue.serverMatches(candidate.serverUrl, serverUrl) &&
+      candidate.world === accessData.world &&
+      String(candidate.playerId) === String(accessData.playerId);
   });
   if (!account) {
     account = {
+      serverUrl: accessData.serverUrl || serverUrl,
+      serverName: accessData.serverName || '',
       world: accessData.world,
       playerId: accessData.playerId,
       playerName: accessData.playerName,
@@ -82,12 +95,14 @@ async function handleRequestAccess(message) {
     };
     accounts.push(account);
   }
+  account.serverUrl = accessData.serverUrl || serverUrl;
+  account.serverName = accessData.serverName || account.serverName || '';
   account.playerName = accessData.playerName;
   account.playerId = accessData.playerId;
   account.accessId = accessData.id;
   account.verifyToken = accessData.verifyToken;
   account.status = TD.AccountStatus.PendingVerification;
-  account.token = null;
+  account.token = accessData.sessionToken || null;
   account.tokenExpiresAt = null;
 
   const saved = await queue.writeStorage(TD.StorageKeys.Accounts, accounts);
@@ -103,7 +118,7 @@ async function handleVerifyAccount(message) {
     return { response: null, error: 'Account niet gevonden' };
   }
 
-  const result = await api.verifyAccess(account.accessId, account.verifyToken);
+  const result = await api.verifyAccess(account.accessId, account.verifyToken, account.token);
   if (result.error || !result.response) {
     return { response: null, error: result.error || 'Verificatie mislukt' };
   }
@@ -113,11 +128,13 @@ async function handleVerifyAccount(message) {
     account.status = TD.AccountStatus.Verified;
     account.playerId = verifyData.playerId;
     account.playerName = verifyData.playerName;
-    account.token = verifyData.sessionToken;
+    account.token = verifyData.sessionToken || account.token;
     account.tokenExpiresAt = verifyData.expiresAt;
     account.verifiedAt = new Date().toISOString();
+    account.serverUrl = verifyData.serverUrl || account.serverUrl;
+    account.serverName = verifyData.serverName || account.serverName || '';
     await queue.writeStorage(TD.StorageKeys.Accounts, accounts);
-    await queue.resetNoAccountItems(account.world, account.playerId);
+    await queue.resetNoAccountItems(account.serverUrl, account.world, account.playerId);
     scheduleFlush();
     return { response: account, error: null };
   }
@@ -136,7 +153,25 @@ async function handleReRequestAccess(message) {
   if (!account) {
     return { response: null, error: 'Account niet gevonden' };
   }
-  return handleRequestAccess({ world: account.world, playerName: account.playerName });
+  return handleRequestAccess({ serverUrl: account.serverUrl, world: account.world, playerName: account.playerName, token: account.token });
+}
+
+async function handleGetServers() {
+  const cached = await queue.readStorage(TD.StorageKeys.Servers, null);
+  if (cached && Array.isArray(cached.servers) && cached.servers.length > 0 && Date.now() - cached.fetchedAt < TD.ServersCacheMs) {
+    return { response: cached.servers, error: null };
+  }
+
+  const result = await api.getServers();
+  if (result.error || !Array.isArray(result.response)) {
+    if (cached && Array.isArray(cached.servers) && cached.servers.length > 0) {
+      return { response: cached.servers, error: null };
+    }
+    return { response: null, error: result.error || 'Kon serverlijst niet ophalen' };
+  }
+
+  await queue.writeStorage(TD.StorageKeys.Servers, { fetchedAt: Date.now(), servers: result.response });
+  return { response: result.response, error: null };
 }
 
 async function handleMessage(message) {
@@ -147,6 +182,7 @@ async function handleMessage(message) {
   if (message.type === TD.MessageType.RequestAccess) return handleRequestAccess(message);
   if (message.type === TD.MessageType.VerifyAccount) return handleVerifyAccount(message);
   if (message.type === TD.MessageType.ReRequestAccess) return handleReRequestAccess(message);
+  if (message.type === TD.MessageType.GetServers) return handleGetServers();
   if (message.type === TD.MessageType.FlushQueue) {
     scheduleFlush();
     return { response: true, error: null };

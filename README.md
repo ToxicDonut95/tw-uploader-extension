@@ -14,7 +14,7 @@ No build step, no framework. Plain JavaScript.
 
 ## Account setup
 
-1. Open the popup, enter the world (e.g. `nl95`) and your player name, click **Account toevoegen**.
+1. Open the popup. When a Tribal Wars game tab is active the server and world are prefilled from it; otherwise pick the server from the dropdown and type the world (e.g. `nl95`). Add your player name and click **Account toevoegen**.
 2. The popup shows a verification code. Copy it and paste it into the personal text on your Tribal Wars profile.
 3. Click **Verifieer nu**. Once verified, queued uploads for that world and player are sent automatically.
 
@@ -37,15 +37,21 @@ The element's text content is the JSON envelope:
 ```json
 {
   "script": "incomings-enhancer",
-  "version": "1.2.3",
+  "version": 1,
   "world": "nl95",
+  "serverUrl": "https://nl95.tribalwars.nl",
   "playerId": 123456,
   "playerName": "donut_toxic",
-  "sitterId": null,
-  "exportedAt": "2026-08-31T12:00:00Z",
+  "sitterId": 0,
+  "exportedAt": 1756641600000,
   "payload": {}
 }
 ```
+
+`version` is an integer, `sitterId` is `0` when the player is not sitting, and `exportedAt` is a unix timestamp in
+milliseconds (`Date.now()`). `serverUrl` is `location.origin` of the game tab and is what binds the upload to a
+market; envelopes without it are rejected, and the extension falls back to the content script's own origin only for
+older script versions. The backend rejects an export older than 24 hours.
 
 Known script ids: `incomings-enhancer`, `incomings-tags`, `tribeshare-report`, `tribeshare-village-info`, `scavenge-log`, `noblefarm-log`.
 
@@ -56,7 +62,7 @@ Lifecycle:
 - On failure it sets `data-td-state="failed"` and `data-td-error` with the reason.
 - The extension never removes the element. The userscript may listen for `td-upload-consumed` to clean up its own local state.
 
-Deduplication: items are deduped on the element uuid and on the combination `world + playerId + script + exportedAt`, so rendering the same envelope on multiple page loads is safe.
+Deduplication: items are deduped on the element uuid and on the combination `serverUrl + world + playerId + script + exportedAt`, so rendering the same envelope on multiple page loads is safe, and identical world names on two markets do not collide.
 
 ## Behavior
 
@@ -80,3 +86,10 @@ src/popup/popup.html|js|css     account management and upload log
 src/shared/constants.js         API base, enums, storage keys
 icons/                          placeholder icons
 ```
+
+## Supported markets
+
+`manifest.json` lists the markets the content script runs on and the extension may talk to: `tribalwars.nl`,
+`tribalwars.net`, `die-staemme.de`, `tribalwars.cash` and `tribalwars.works`. These mirror the servers marked
+Supported in the backend. Enabling a new market in the backend admin page is not enough: add its pattern to both
+`host_permissions` and `content_scripts[].matches` and release a new extension version.

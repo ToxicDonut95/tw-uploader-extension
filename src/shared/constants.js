@@ -1,11 +1,14 @@
 globalThis.TD = {
   API_BASE: 'https://api.toxicdonut.dev',
+  CLIENT_HEADER: 'X-TD-Client',
+  CLIENT_NAME: 'extension',
   MessageType: {
     Upload: 1,
     RequestAccess: 2,
     VerifyAccount: 3,
     ReRequestAccess: 4,
-    FlushQueue: 5
+    FlushQueue: 5,
+    GetServers: 6
   },
   UploadStatus: {
     Pending: 1,
@@ -29,8 +32,10 @@ globalThis.TD = {
     Queue: 'queue',
     Accounts: 'accounts',
     Settings: 'settings',
-    Log: 'log'
+    Log: 'log',
+    Servers: 'servers'
   },
+  ServersCacheMs: 86400000,
   BackoffMs: [30000, 120000, 600000, 1800000],
   MaxQueueItems: 200,
   MaxLogItems: 100

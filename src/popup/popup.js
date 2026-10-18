@@ -6,6 +6,9 @@
   const addForm = document.getElementById('add-account-form');
   const worldInput = document.getElementById('world-input');
   const playerInput = document.getElementById('player-input');
+  const serverSelect = document.getElementById('server-select');
+
+  let servers = [];
 
   function showMessage(text, isInfo) {
     messageBox.textContent = text;
@@ -51,6 +54,81 @@
         resolve({ response: null, error: 'Kon bericht niet versturen' });
       }
     });
+  }
+
+  function hostOf(url) {
+    try {
+      return new URL(url).hostname.toLowerCase();
+    } catch (urlError) {
+      return '';
+    }
+  }
+
+  function coversHost(host, marketHost) {
+    const domain = marketHost.startsWith('www.') ? marketHost.slice(4) : marketHost;
+    return host === domain || host.endsWith('.' + domain);
+  }
+
+  function serverMatches(serverUrl, originUrl) {
+    const serverHost = hostOf(serverUrl);
+    const originHost = hostOf(originUrl);
+    if (!serverHost || !originHost) return false;
+    if (serverHost === originHost) return true;
+
+    return coversHost(serverHost, originHost) || coversHost(originHost, serverHost);
+  }
+
+  function serverLabel(serverUrl) {
+    const match = servers.find(function (server) {
+      return serverMatches(server.url, serverUrl);
+    });
+    return match ? match.name : hostOf(serverUrl) || 'onbekend';
+  }
+
+  function renderServers() {
+    serverSelect.textContent = '';
+    for (const server of servers) {
+      const option = document.createElement('option');
+      option.value = server.url;
+      option.textContent = server.name;
+      serverSelect.appendChild(option);
+    }
+  }
+
+  async function prefillFromActiveTab() {
+    let tabs = [];
+    try {
+      tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    } catch (tabsError) {
+      return;
+    }
+
+    const tabUrl = tabs && tabs[0] ? tabs[0].url : '';
+    if (!tabUrl) return;
+
+    const server = servers.find(function (candidate) {
+      return serverMatches(candidate.url, tabUrl);
+    });
+    if (!server) return;
+
+    serverSelect.value = server.url;
+
+    const worldPrefix = hostOf(tabUrl).split('.')[0];
+    if (worldPrefix && worldPrefix !== 'www' && !worldInput.value) {
+      worldInput.value = worldPrefix;
+    }
+  }
+
+  async function loadServers() {
+    const reply = await sendMessage({ type: TD.MessageType.GetServers });
+    if (reply.error || !Array.isArray(reply.response)) {
+      showMessage(reply.error || 'Kon serverlijst niet ophalen');
+      return;
+    }
+    servers = reply.response;
+    renderServers();
+    await prefillFromActiveTab();
+    render();
   }
 
   function accountStatusChip(status) {
@@ -197,21 +275,21 @@
       return;
     }
 
-    const worlds = {};
+    const groups = {};
     for (const account of accounts) {
-      const world = account.world || 'onbekend';
-      if (!worlds[world]) worlds[world] = [];
-      worlds[world].push(account);
+      const groupKey = serverLabel(account.serverUrl) + ' / ' + (account.world || 'onbekend');
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(account);
     }
 
-    for (const world of Object.keys(worlds).sort()) {
+    for (const groupKey of Object.keys(groups).sort()) {
       const group = document.createElement('div');
       group.classList.add('world-group');
       const title = document.createElement('div');
       title.classList.add('world-title');
-      title.textContent = world;
+      title.textContent = groupKey;
       group.appendChild(title);
-      for (const account of worlds[world]) {
+      for (const account of groups[groupKey]) {
         group.appendChild(buildAccountCard(account));
       }
       accountsList.appendChild(group);
@@ -236,6 +314,9 @@
       const script = document.createElement('span');
       script.textContent = entry.script || '';
       script.title = entry.error || '';
+      const server = document.createElement('span');
+      server.textContent = entry.serverUrl ? serverLabel(entry.serverUrl) : '';
+      server.title = entry.serverUrl || '';
       const world = document.createElement('span');
       world.textContent = entry.world || '';
       const status = document.createElement('span');
@@ -244,6 +325,7 @@
       status.title = entry.error || '';
       row.appendChild(time);
       row.appendChild(script);
+      row.appendChild(server);
       row.appendChild(world);
       row.appendChild(status);
       logList.appendChild(row);
@@ -271,13 +353,18 @@
   addForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     clearMessage();
+    const serverUrl = serverSelect.value;
     const world = worldInput.value.trim();
     const playerName = playerInput.value.trim();
+    if (!serverUrl) {
+      showMessage('Kies een server');
+      return;
+    }
     if (!world || !playerName) {
       showMessage('Vul wereld en spelersnaam in');
       return;
     }
-    const reply = await sendMessage({ type: TD.MessageType.RequestAccess, world, playerName });
+    const reply = await sendMessage({ type: TD.MessageType.RequestAccess, serverUrl, world, playerName });
     if (reply.error) {
       showMessage(reply.error);
       return;
@@ -298,4 +385,5 @@
   }
 
   render();
+  loadServers();
 })();
