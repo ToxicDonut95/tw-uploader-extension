@@ -1,0 +1,230 @@
+{
+  "extName": {
+    "message": "Toxic Donut Uploader"
+  },
+  "extDescription": {
+    "message": "Uploadt Tribal Wars scriptdata automatisch naar het Toxic Donut portaal"
+  },
+  "autoUpload": {
+    "message": "Automatisch uploaden"
+  },
+  "accountsHeading": {
+    "message": "Accounts"
+  },
+  "serverLabel": {
+    "message": "Server"
+  },
+  "worldLabel": {
+    "message": "Wereld"
+  },
+  "playerNameLabel": {
+    "message": "Spelersnaam"
+  },
+  "addAccountButton": {
+    "message": "Account toevoegen"
+  },
+  "recentUploadsHeading": {
+    "message": "Recente uploads"
+  },
+  "portalLink": {
+    "message": "Open het Toxic Donut portaal"
+  },
+  "unknownLabel": {
+    "message": "onbekend"
+  },
+  "statusVerified": {
+    "message": "Geverifieerd"
+  },
+  "statusPending": {
+    "message": "In afwachting"
+  },
+  "statusExpired": {
+    "message": "Verlopen"
+  },
+  "statusUnverified": {
+    "message": "Niet geverifieerd"
+  },
+  "uploadPending": {
+    "message": "In wachtrij"
+  },
+  "uploadUploading": {
+    "message": "Bezig"
+  },
+  "uploadDone": {
+    "message": "Geüpload"
+  },
+  "uploadFailed": {
+    "message": "Mislukt"
+  },
+  "uploadNoAccount": {
+    "message": "Geen account"
+  },
+  "uploadUnknown": {
+    "message": "Onbekend"
+  },
+  "copyButton": {
+    "message": "Kopieer"
+  },
+  "codeCopied": {
+    "message": "Code gekopieerd naar klembord"
+  },
+  "readKeyCopied": {
+    "message": "Leessleutel gekopieerd naar klembord"
+  },
+  "copyFailed": {
+    "message": "Kopiëren mislukt"
+  },
+  "readKeyLabel": {
+    "message": "Leessleutel"
+  },
+  "validUntil": {
+    "message": "Geldig tot $DATE$",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "18-10-2026 12:00:00"
+      }
+    }
+  },
+  "verifyInstructions": {
+    "message": "Plak de code in je persoonlijke tekst op je profiel en klik daarna op Verifieer nu."
+  },
+  "verifyNowButton": {
+    "message": "Verifieer nu"
+  },
+  "accountVerified": {
+    "message": "Account geverifieerd"
+  },
+  "reverifyButton": {
+    "message": "Opnieuw verifiëren"
+  },
+  "newCodeRequested": {
+    "message": "Nieuwe code aangevraagd. Plak de code in je profiel en klik op Verifieer nu."
+  },
+  "removeButton": {
+    "message": "Verwijderen"
+  },
+  "confirmRemoveButton": {
+    "message": "Bevestig verwijderen"
+  },
+  "accountRemoved": {
+    "message": "Account verwijderd"
+  },
+  "noAccounts": {
+    "message": "Nog geen accounts. Voeg hieronder een account toe."
+  },
+  "noUploads": {
+    "message": "Nog geen uploads."
+  },
+  "worldsLoading": {
+    "message": "Werelden laden..."
+  },
+  "worldsEmpty": {
+    "message": "Geen werelden gevonden"
+  },
+  "worldsNoServer": {
+    "message": "Kies eerst een server"
+  },
+  "requestSent": {
+    "message": "Aanvraag verstuurd. Plak de code in je persoonlijke tekst op je profiel en klik daarna op Verifieer nu."
+  },
+  "errorChooseServer": {
+    "message": "Kies een server"
+  },
+  "errorWorldAndPlayer": {
+    "message": "Kies een wereld en vul je spelersnaam in"
+  },
+  "errorNoBackgroundConnection": {
+    "message": "Geen verbinding met achtergrondproces"
+  },
+  "errorNoBackgroundReply": {
+    "message": "Geen antwoord van achtergrondproces"
+  },
+  "errorSendFailed": {
+    "message": "Kon bericht niet versturen"
+  },
+  "errorServersFailed": {
+    "message": "Kon serverlijst niet ophalen"
+  },
+  "errorWorldsFailed": {
+    "message": "Kon werelden niet ophalen"
+  },
+  "errorRequestFailed": {
+    "message": "Aanvraag mislukt"
+  },
+  "errorSaveAccount": {
+    "message": "Kon account niet opslaan"
+  },
+  "errorAccountNotFound": {
+    "message": "Account niet gevonden"
+  },
+  "errorRemoveFailed": {
+    "message": "Kon account niet verwijderen"
+  },
+  "errorVerifyFailed": {
+    "message": "Verificatie mislukt"
+  },
+  "errorRequestExpired": {
+    "message": "Aanvraag verlopen. Vraag een nieuwe code aan."
+  },
+  "errorNotVerifiedYet": {
+    "message": "Nog niet geverifieerd. Plak de code in je persoonlijke tekst op je profiel en probeer opnieuw."
+  },
+  "errorUnknownMessage": {
+    "message": "Onbekend berichttype"
+  },
+  "errorInvalidEnvelope": {
+    "message": "Ongeldige envelope"
+  },
+  "errorEnvelopeMissingFields": {
+    "message": "Envelope mist script, world of playerId"
+  },
+  "errorEnvelopeMissingServer": {
+    "message": "Envelope mist serverUrl, werk het script bij"
+  },
+  "errorQueueSave": {
+    "message": "Kon wachtrij niet opslaan"
+  },
+  "errorNoVerifiedAccount": {
+    "message": "Geen geverifieerd account voor deze wereld en speler"
+  },
+  "errorSessionExpired": {
+    "message": "Sessie verlopen, verifieer het account opnieuw"
+  },
+  "errorTokenInvalid": {
+    "message": "Toegangstoken ongeldig of verlopen"
+  },
+  "errorUploadRejected": {
+    "message": "Upload geweigerd"
+  },
+  "errorUploadGaveUp": {
+    "message": "Upload mislukt na herhaalde pogingen"
+  },
+  "errorTemporary": {
+    "message": "Tijdelijke fout, nieuwe poging gepland"
+  },
+  "errorNetwork": {
+    "message": "Netwerkfout: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1",
+        "example": "Failed to fetch"
+      }
+    }
+  },
+  "errorInvalidJson": {
+    "message": "Ongeldige JSON in uploadelement"
+  },
+  "errorNoExtensionConnection": {
+    "message": "Geen verbinding met extensie"
+  },
+  "errorNoExtensionReply": {
+    "message": "Geen antwoord van extensie"
+  },
+  "errorUnknown": {
+    "message": "Onbekende fout"
+  },
+  "errorNoExtensionContext": {
+    "message": "Extensiecontext niet beschikbaar"
+  }
+}

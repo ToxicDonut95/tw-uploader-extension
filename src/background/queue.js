@@ -1,7 +1,9 @@
 import '../shared/constants.js';
+import '../shared/i18n.js';
 import * as api from './api.js';
 
 const TD = globalThis.TD;
+const text = globalThis.tdText;
 
 export async function readStorage(key, fallback) {
   try {
@@ -128,13 +130,13 @@ export async function updateBadge() {
 
 export async function enqueue(envelope, elementId) {
   if (!envelope || typeof envelope !== 'object') {
-    return { accepted: false, error: 'Ongeldige envelope' };
+    return { accepted: false, error: text('errorInvalidEnvelope') };
   }
   if (!envelope.script || !envelope.world || envelope.playerId === undefined || envelope.playerId === null) {
-    return { accepted: false, error: 'Envelope mist script, world of playerId' };
+    return { accepted: false, error: text('errorEnvelopeMissingFields') };
   }
   if (!normalizeServerUrl(envelope.serverUrl)) {
-    return { accepted: false, error: 'Envelope mist serverUrl, werk het script bij' };
+    return { accepted: false, error: text('errorEnvelopeMissingServer') };
   }
 
   const items = await readStorage(TD.StorageKeys.Queue, []);
@@ -167,7 +169,7 @@ export async function enqueue(envelope, elementId) {
 
   const saved = await writeStorage(TD.StorageKeys.Queue, items);
   if (!saved) {
-    return { accepted: false, error: 'Kon wachtrij niet opslaan' };
+    return { accepted: false, error: text('errorQueueSave') };
   }
   await updateBadge();
   return { accepted: true, error: null };
@@ -220,17 +222,27 @@ export async function flush() {
     let accountsChanged = false;
 
     for (const item of items) {
+      if (item.status === TD.UploadStatus.Uploading) {
+        item.status = TD.UploadStatus.Pending;
+        queueChanged = true;
+      }
+    }
+
+    for (const item of items) {
       if (item.status !== TD.UploadStatus.Pending) continue;
       if (item.nextAttemptAt && item.nextAttemptAt > now) continue;
 
       const account = findVerifiedAccount(accounts, item.serverUrl, item.world, item.playerId);
       if (!account) {
         item.status = TD.UploadStatus.NoAccount;
-        item.error = 'Geen geverifieerd account voor deze wereld en speler';
+        item.error = text('errorNoVerifiedAccount');
         queueChanged = true;
         await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: item.status, error: item.error });
         continue;
       }
+
+      item.status = TD.UploadStatus.Uploading;
+      await writeStorage(TD.StorageKeys.Queue, items);
 
       const result = await api.uploadEnvelope(item.envelope, account.token);
       queueChanged = true;
@@ -238,23 +250,29 @@ export async function flush() {
       if (result.status === 201) {
         item.status = TD.UploadStatus.Done;
         item.error = null;
-      } else if (result.status === 401 || result.status === 403) {
+      } else if (result.status === 401) {
         account.status = TD.AccountStatus.Expired;
         accountsChanged = true;
         item.status = TD.UploadStatus.NoAccount;
-        item.error = 'Toegangstoken ongeldig of verlopen';
+        item.nextAttemptAt = 0;
+        item.error = text('errorSessionExpired');
+      } else if (result.status === 403) {
+        account.status = TD.AccountStatus.Expired;
+        accountsChanged = true;
+        item.status = TD.UploadStatus.NoAccount;
+        item.error = text('errorTokenInvalid');
       } else if (result.status >= 400 && result.status < 500) {
         item.status = TD.UploadStatus.Failed;
-        item.error = result.error || 'Upload geweigerd';
+        item.error = result.error || text('errorUploadRejected');
       } else {
         item.attempts = (item.attempts || 0) + 1;
         if (item.attempts > TD.BackoffMs.length) {
           item.status = TD.UploadStatus.Failed;
-          item.error = result.error || 'Upload mislukt na herhaalde pogingen';
+          item.error = result.error || text('errorUploadGaveUp');
         } else {
           item.status = TD.UploadStatus.Pending;
           item.nextAttemptAt = Date.now() + TD.BackoffMs[item.attempts - 1];
-          item.error = result.error || 'Tijdelijke fout, nieuwe poging gepland';
+          item.error = result.error || text('errorTemporary');
           continue;
         }
       }

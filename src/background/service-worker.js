@@ -1,8 +1,10 @@
 import '../shared/constants.js';
+import '../shared/i18n.js';
 import * as api from './api.js';
 import * as queue from './queue.js';
 
 const TD = globalThis.TD;
+const text = globalThis.tdText;
 const FLUSH_ALARM = 'td-flush';
 
 function scheduleFlush() {
@@ -61,15 +63,15 @@ async function handleRequestAccess(message) {
   const world = typeof message.world === 'string' ? message.world.trim() : '';
   const playerName = typeof message.playerName === 'string' ? message.playerName.trim() : '';
   if (!serverUrl) {
-    return { response: null, error: 'Kies een server' };
+    return { response: null, error: text('errorChooseServer') };
   }
   if (!world || !playerName) {
-    return { response: null, error: 'Vul wereld en spelersnaam in' };
+    return { response: null, error: text('errorWorldAndPlayer') };
   }
 
   const result = await api.requestAccess(serverUrl, world, playerName, message.token);
   if (result.error || !result.response) {
-    return { response: null, error: result.error || 'Aanvraag mislukt' };
+    return { response: null, error: result.error || text('errorRequestFailed') };
   }
 
   const accessData = result.response;
@@ -91,6 +93,7 @@ async function handleRequestAccess(message) {
       status: TD.AccountStatus.Unverified,
       token: null,
       tokenExpiresAt: null,
+      readKey: null,
       verifiedAt: null
     };
     accounts.push(account);
@@ -107,7 +110,7 @@ async function handleRequestAccess(message) {
 
   const saved = await queue.writeStorage(TD.StorageKeys.Accounts, accounts);
   if (!saved) {
-    return { response: null, error: 'Kon account niet opslaan' };
+    return { response: null, error: text('errorSaveAccount') };
   }
   return { response: account, error: null };
 }
@@ -115,12 +118,12 @@ async function handleRequestAccess(message) {
 async function handleVerifyAccount(message) {
   const { accounts, account } = await findAccountByAccessId(message.accessId);
   if (!account) {
-    return { response: null, error: 'Account niet gevonden' };
+    return { response: null, error: text('errorAccountNotFound') };
   }
 
   const result = await api.verifyAccess(account.accessId, account.verifyToken, account.token);
   if (result.error || !result.response) {
-    return { response: null, error: result.error || 'Verificatie mislukt' };
+    return { response: null, error: result.error || text('errorVerifyFailed') };
   }
 
   const verifyData = result.response;
@@ -129,7 +132,8 @@ async function handleVerifyAccount(message) {
     account.playerId = verifyData.playerId;
     account.playerName = verifyData.playerName;
     account.token = verifyData.sessionToken || account.token;
-    account.tokenExpiresAt = verifyData.expiresAt;
+    account.tokenExpiresAt = verifyData.expiresAt || null;
+    account.readKey = verifyData.readKey || account.readKey || null;
     account.verifiedAt = new Date().toISOString();
     account.serverUrl = verifyData.serverUrl || account.serverUrl;
     account.serverName = verifyData.serverName || account.serverName || '';
@@ -142,16 +146,16 @@ async function handleVerifyAccount(message) {
   if (verifyData.status === TD.AccessStatus.Expired) {
     account.status = TD.AccountStatus.Expired;
     await queue.writeStorage(TD.StorageKeys.Accounts, accounts);
-    return { response: null, error: 'Aanvraag verlopen. Vraag een nieuwe code aan.' };
+    return { response: null, error: text('errorRequestExpired') };
   }
 
-  return { response: null, error: 'Nog niet geverifieerd. Plak de code in je persoonlijke tekst op je profiel en probeer opnieuw.' };
+  return { response: null, error: text('errorNotVerifiedYet') };
 }
 
 async function handleReRequestAccess(message) {
   const { account } = await findAccountByAccessId(message.accessId);
   if (!account) {
-    return { response: null, error: 'Account niet gevonden' };
+    return { response: null, error: text('errorAccountNotFound') };
   }
   return handleRequestAccess({ serverUrl: account.serverUrl, world: account.world, playerName: account.playerName, token: account.token });
 }
@@ -167,27 +171,65 @@ async function handleGetServers() {
     if (cached && Array.isArray(cached.servers) && cached.servers.length > 0) {
       return { response: cached.servers, error: null };
     }
-    return { response: null, error: result.error || 'Kon serverlijst niet ophalen' };
+    return { response: null, error: result.error || text('errorServersFailed') };
   }
 
   await queue.writeStorage(TD.StorageKeys.Servers, { fetchedAt: Date.now(), servers: result.response });
   return { response: result.response, error: null };
 }
 
+async function handleGetWorlds(message) {
+  const serverUrl = queue.normalizeServerUrl(message.serverUrl);
+  if (!serverUrl) {
+    return { response: null, error: text('errorChooseServer') };
+  }
+
+  const result = await api.getWorlds(serverUrl);
+  if (result.error || !Array.isArray(result.response)) {
+    return { response: null, error: result.error || text('errorWorldsFailed') };
+  }
+  return { response: result.response, error: null };
+}
+
+async function handleRemoveAccount(message) {
+  const { accounts, account } = await findAccountByAccessId(message.accessId);
+  if (!account) {
+    return { response: null, error: text('errorAccountNotFound') };
+  }
+
+  if (account.token) {
+    const result = await api.removeAccess(account.accessId, account.token);
+    if (result.error && result.status !== 401 && result.status !== 404) {
+      return { response: null, error: result.error || text('errorRemoveFailed') };
+    }
+  }
+
+  const remaining = accounts.filter(function (candidate) {
+    return candidate !== account;
+  });
+  const saved = await queue.writeStorage(TD.StorageKeys.Accounts, remaining);
+  if (!saved) {
+    return { response: null, error: text('errorRemoveFailed') };
+  }
+  return { response: true, error: null };
+}
+
 async function handleMessage(message) {
   if (!message || typeof message.type !== 'number') {
-    return { accepted: false, response: null, error: 'Onbekend berichttype' };
+    return { accepted: false, response: null, error: text('errorUnknownMessage') };
   }
   if (message.type === TD.MessageType.Upload) return handleUpload(message);
   if (message.type === TD.MessageType.RequestAccess) return handleRequestAccess(message);
   if (message.type === TD.MessageType.VerifyAccount) return handleVerifyAccount(message);
   if (message.type === TD.MessageType.ReRequestAccess) return handleReRequestAccess(message);
   if (message.type === TD.MessageType.GetServers) return handleGetServers();
+  if (message.type === TD.MessageType.GetWorlds) return handleGetWorlds(message);
+  if (message.type === TD.MessageType.RemoveAccount) return handleRemoveAccount(message);
   if (message.type === TD.MessageType.FlushQueue) {
     scheduleFlush();
     return { response: true, error: null };
   }
-  return { accepted: false, response: null, error: 'Onbekend berichttype' };
+  return { accepted: false, response: null, error: text('errorUnknownMessage') };
 }
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {

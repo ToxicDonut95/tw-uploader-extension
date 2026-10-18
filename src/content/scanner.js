@@ -27,7 +27,7 @@
     }
     if (!envelope || typeof envelope !== 'object') {
       inFlight.delete(flightKey);
-      markFailed(element, 'Ongeldige JSON in uploadelement');
+      markFailed(element, tdText('errorInvalidJson'));
       return;
     }
 
@@ -36,17 +36,17 @@
       chrome.runtime.sendMessage({ type: TD.MessageType.Upload, elementId, envelope, origin: location.origin }, function (reply) {
         inFlight.delete(flightKey);
         if (chrome.runtime.lastError) {
-          markFailed(element, chrome.runtime.lastError.message || 'Geen verbinding met extensie');
+          markFailed(element, chrome.runtime.lastError.message || tdText('errorNoExtensionConnection'));
           return;
         }
         if (!reply) {
-          markFailed(element, 'Geen antwoord van extensie');
+          markFailed(element, tdText('errorNoExtensionReply'));
           return;
         }
         if (reply.accepted) {
           markAccepted(element);
         } else {
-          markFailed(element, reply.error || 'Onbekende fout');
+          markFailed(element, reply.error || tdText('errorUnknown'));
         }
       });
       sent = true;
@@ -55,7 +55,7 @@
     }
     if (!sent) {
       inFlight.delete(flightKey);
-      markFailed(element, 'Extensiecontext niet beschikbaar');
+      markFailed(element, tdText('errorNoExtensionContext'));
     }
   }
 

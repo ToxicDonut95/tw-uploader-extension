@@ -220,3 +220,37 @@ button:hover {
   font-style: italic;
   font-size: 12px;
 }
+
+.token-label {
+  font-size: 12px;
+  color: #555555;
+  white-space: nowrap;
+}
+
+.remove-button {
+  margin-left: auto;
+}
+
+.remove-confirm {
+  background: #fbe0e0;
+  border-color: #c08080;
+  color: #a02020;
+}
+
+.remove-confirm:hover {
+  background: #f5cccc;
+}
+
+.add-form select:disabled {
+  color: #777777;
+  background: #f3efe6;
+}
+
+.popup-footer {
+  text-align: center;
+  font-size: 12px;
+}
+
+.popup-footer a {
+  color: #8a5a1a;
+}

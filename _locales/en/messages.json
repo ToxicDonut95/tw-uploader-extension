@@ -1,0 +1,230 @@
+{
+  "extName": {
+    "message": "Toxic Donut Uploader"
+  },
+  "extDescription": {
+    "message": "Automatically uploads Tribal Wars script data to the Toxic Donut portal"
+  },
+  "autoUpload": {
+    "message": "Upload automatically"
+  },
+  "accountsHeading": {
+    "message": "Accounts"
+  },
+  "serverLabel": {
+    "message": "Server"
+  },
+  "worldLabel": {
+    "message": "World"
+  },
+  "playerNameLabel": {
+    "message": "Player name"
+  },
+  "addAccountButton": {
+    "message": "Add account"
+  },
+  "recentUploadsHeading": {
+    "message": "Recent uploads"
+  },
+  "portalLink": {
+    "message": "Open the Toxic Donut portal"
+  },
+  "unknownLabel": {
+    "message": "unknown"
+  },
+  "statusVerified": {
+    "message": "Verified"
+  },
+  "statusPending": {
+    "message": "Pending"
+  },
+  "statusExpired": {
+    "message": "Expired"
+  },
+  "statusUnverified": {
+    "message": "Not verified"
+  },
+  "uploadPending": {
+    "message": "Queued"
+  },
+  "uploadUploading": {
+    "message": "Uploading"
+  },
+  "uploadDone": {
+    "message": "Uploaded"
+  },
+  "uploadFailed": {
+    "message": "Failed"
+  },
+  "uploadNoAccount": {
+    "message": "No account"
+  },
+  "uploadUnknown": {
+    "message": "Unknown"
+  },
+  "copyButton": {
+    "message": "Copy"
+  },
+  "codeCopied": {
+    "message": "Code copied to clipboard"
+  },
+  "readKeyCopied": {
+    "message": "Read key copied to clipboard"
+  },
+  "copyFailed": {
+    "message": "Copy failed"
+  },
+  "readKeyLabel": {
+    "message": "Read key"
+  },
+  "validUntil": {
+    "message": "Valid until $DATE$",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "18-10-2026 12:00:00"
+      }
+    }
+  },
+  "verifyInstructions": {
+    "message": "Paste the code into the personal text on your profile, then click Verify now."
+  },
+  "verifyNowButton": {
+    "message": "Verify now"
+  },
+  "accountVerified": {
+    "message": "Account verified"
+  },
+  "reverifyButton": {
+    "message": "Verify again"
+  },
+  "newCodeRequested": {
+    "message": "New code requested. Paste the code into your profile and click Verify now."
+  },
+  "removeButton": {
+    "message": "Remove"
+  },
+  "confirmRemoveButton": {
+    "message": "Confirm removal"
+  },
+  "accountRemoved": {
+    "message": "Account removed"
+  },
+  "noAccounts": {
+    "message": "No accounts yet. Add an account below."
+  },
+  "noUploads": {
+    "message": "No uploads yet."
+  },
+  "worldsLoading": {
+    "message": "Loading worlds..."
+  },
+  "worldsEmpty": {
+    "message": "No worlds found"
+  },
+  "worldsNoServer": {
+    "message": "Choose a server first"
+  },
+  "requestSent": {
+    "message": "Request sent. Paste the code into the personal text on your profile, then click Verify now."
+  },
+  "errorChooseServer": {
+    "message": "Choose a server"
+  },
+  "errorWorldAndPlayer": {
+    "message": "Choose a world and enter your player name"
+  },
+  "errorNoBackgroundConnection": {
+    "message": "No connection to the background process"
+  },
+  "errorNoBackgroundReply": {
+    "message": "No reply from the background process"
+  },
+  "errorSendFailed": {
+    "message": "Could not send message"
+  },
+  "errorServersFailed": {
+    "message": "Could not load the server list"
+  },
+  "errorWorldsFailed": {
+    "message": "Could not load the worlds"
+  },
+  "errorRequestFailed": {
+    "message": "Request failed"
+  },
+  "errorSaveAccount": {
+    "message": "Could not save the account"
+  },
+  "errorAccountNotFound": {
+    "message": "Account not found"
+  },
+  "errorRemoveFailed": {
+    "message": "Could not remove the account"
+  },
+  "errorVerifyFailed": {
+    "message": "Verification failed"
+  },
+  "errorRequestExpired": {
+    "message": "Request expired. Request a new code."
+  },
+  "errorNotVerifiedYet": {
+    "message": "Not verified yet. Paste the code into the personal text on your profile and try again."
+  },
+  "errorUnknownMessage": {
+    "message": "Unknown message type"
+  },
+  "errorInvalidEnvelope": {
+    "message": "Invalid envelope"
+  },
+  "errorEnvelopeMissingFields": {
+    "message": "Envelope is missing script, world or playerId"
+  },
+  "errorEnvelopeMissingServer": {
+    "message": "Envelope is missing serverUrl, update the script"
+  },
+  "errorQueueSave": {
+    "message": "Could not save the queue"
+  },
+  "errorNoVerifiedAccount": {
+    "message": "No verified account for this world and player"
+  },
+  "errorSessionExpired": {
+    "message": "Session expired, verify the account again"
+  },
+  "errorTokenInvalid": {
+    "message": "Access token invalid or expired"
+  },
+  "errorUploadRejected": {
+    "message": "Upload rejected"
+  },
+  "errorUploadGaveUp": {
+    "message": "Upload failed after repeated attempts"
+  },
+  "errorTemporary": {
+    "message": "Temporary error, retry scheduled"
+  },
+  "errorNetwork": {
+    "message": "Network error: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1",
+        "example": "Failed to fetch"
+      }
+    }
+  },
+  "errorInvalidJson": {
+    "message": "Invalid JSON in upload element"
+  },
+  "errorNoExtensionConnection": {
+    "message": "No connection to the extension"
+  },
+  "errorNoExtensionReply": {
+    "message": "No reply from the extension"
+  },
+  "errorUnknown": {
+    "message": "Unknown error"
+  },
+  "errorNoExtensionContext": {
+    "message": "Extension context not available"
+  }
+}

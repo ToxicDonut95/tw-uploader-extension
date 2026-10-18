@@ -1,0 +1,230 @@
+{
+  "extName": {
+    "message": "Toxic Donut Uploader"
+  },
+  "extDescription": {
+    "message": "Lädt Die Stämme Skriptdaten automatisch in das Toxic Donut Portal hoch"
+  },
+  "autoUpload": {
+    "message": "Automatisch hochladen"
+  },
+  "accountsHeading": {
+    "message": "Konten"
+  },
+  "serverLabel": {
+    "message": "Server"
+  },
+  "worldLabel": {
+    "message": "Welt"
+  },
+  "playerNameLabel": {
+    "message": "Spielername"
+  },
+  "addAccountButton": {
+    "message": "Konto hinzufügen"
+  },
+  "recentUploadsHeading": {
+    "message": "Letzte Uploads"
+  },
+  "portalLink": {
+    "message": "Toxic Donut Portal öffnen"
+  },
+  "unknownLabel": {
+    "message": "unbekannt"
+  },
+  "statusVerified": {
+    "message": "Verifiziert"
+  },
+  "statusPending": {
+    "message": "Ausstehend"
+  },
+  "statusExpired": {
+    "message": "Abgelaufen"
+  },
+  "statusUnverified": {
+    "message": "Nicht verifiziert"
+  },
+  "uploadPending": {
+    "message": "In Warteschlange"
+  },
+  "uploadUploading": {
+    "message": "Wird hochgeladen"
+  },
+  "uploadDone": {
+    "message": "Hochgeladen"
+  },
+  "uploadFailed": {
+    "message": "Fehlgeschlagen"
+  },
+  "uploadNoAccount": {
+    "message": "Kein Konto"
+  },
+  "uploadUnknown": {
+    "message": "Unbekannt"
+  },
+  "copyButton": {
+    "message": "Kopieren"
+  },
+  "codeCopied": {
+    "message": "Code in die Zwischenablage kopiert"
+  },
+  "readKeyCopied": {
+    "message": "Leseschlüssel in die Zwischenablage kopiert"
+  },
+  "copyFailed": {
+    "message": "Kopieren fehlgeschlagen"
+  },
+  "readKeyLabel": {
+    "message": "Leseschlüssel"
+  },
+  "validUntil": {
+    "message": "Gültig bis $DATE$",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "18-10-2026 12:00:00"
+      }
+    }
+  },
+  "verifyInstructions": {
+    "message": "Füge den Code in den persönlichen Text deines Profils ein und klicke dann auf Jetzt verifizieren."
+  },
+  "verifyNowButton": {
+    "message": "Jetzt verifizieren"
+  },
+  "accountVerified": {
+    "message": "Konto verifiziert"
+  },
+  "reverifyButton": {
+    "message": "Erneut verifizieren"
+  },
+  "newCodeRequested": {
+    "message": "Neuer Code angefordert. Füge den Code in dein Profil ein und klicke auf Jetzt verifizieren."
+  },
+  "removeButton": {
+    "message": "Entfernen"
+  },
+  "confirmRemoveButton": {
+    "message": "Entfernen bestätigen"
+  },
+  "accountRemoved": {
+    "message": "Konto entfernt"
+  },
+  "noAccounts": {
+    "message": "Noch keine Konten. Füge unten ein Konto hinzu."
+  },
+  "noUploads": {
+    "message": "Noch keine Uploads."
+  },
+  "worldsLoading": {
+    "message": "Welten werden geladen..."
+  },
+  "worldsEmpty": {
+    "message": "Keine Welten gefunden"
+  },
+  "worldsNoServer": {
+    "message": "Wähle zuerst einen Server"
+  },
+  "requestSent": {
+    "message": "Anfrage gesendet. Füge den Code in den persönlichen Text deines Profils ein und klicke dann auf Jetzt verifizieren."
+  },
+  "errorChooseServer": {
+    "message": "Wähle einen Server"
+  },
+  "errorWorldAndPlayer": {
+    "message": "Wähle eine Welt und gib deinen Spielernamen ein"
+  },
+  "errorNoBackgroundConnection": {
+    "message": "Keine Verbindung zum Hintergrundprozess"
+  },
+  "errorNoBackgroundReply": {
+    "message": "Keine Antwort vom Hintergrundprozess"
+  },
+  "errorSendFailed": {
+    "message": "Nachricht konnte nicht gesendet werden"
+  },
+  "errorServersFailed": {
+    "message": "Serverliste konnte nicht geladen werden"
+  },
+  "errorWorldsFailed": {
+    "message": "Welten konnten nicht geladen werden"
+  },
+  "errorRequestFailed": {
+    "message": "Anfrage fehlgeschlagen"
+  },
+  "errorSaveAccount": {
+    "message": "Konto konnte nicht gespeichert werden"
+  },
+  "errorAccountNotFound": {
+    "message": "Konto nicht gefunden"
+  },
+  "errorRemoveFailed": {
+    "message": "Konto konnte nicht entfernt werden"
+  },
+  "errorVerifyFailed": {
+    "message": "Verifizierung fehlgeschlagen"
+  },
+  "errorRequestExpired": {
+    "message": "Anfrage abgelaufen. Fordere einen neuen Code an."
+  },
+  "errorNotVerifiedYet": {
+    "message": "Noch nicht verifiziert. Füge den Code in den persönlichen Text deines Profils ein und versuche es erneut."
+  },
+  "errorUnknownMessage": {
+    "message": "Unbekannter Nachrichtentyp"
+  },
+  "errorInvalidEnvelope": {
+    "message": "Ungültiger Umschlag"
+  },
+  "errorEnvelopeMissingFields": {
+    "message": "Umschlag ohne script, world oder playerId"
+  },
+  "errorEnvelopeMissingServer": {
+    "message": "Umschlag ohne serverUrl, aktualisiere das Skript"
+  },
+  "errorQueueSave": {
+    "message": "Warteschlange konnte nicht gespeichert werden"
+  },
+  "errorNoVerifiedAccount": {
+    "message": "Kein verifiziertes Konto für diese Welt und diesen Spieler"
+  },
+  "errorSessionExpired": {
+    "message": "Sitzung abgelaufen, verifiziere das Konto erneut"
+  },
+  "errorTokenInvalid": {
+    "message": "Zugangstoken ungültig oder abgelaufen"
+  },
+  "errorUploadRejected": {
+    "message": "Upload abgelehnt"
+  },
+  "errorUploadGaveUp": {
+    "message": "Upload nach wiederholten Versuchen fehlgeschlagen"
+  },
+  "errorTemporary": {
+    "message": "Vorübergehender Fehler, neuer Versuch geplant"
+  },
+  "errorNetwork": {
+    "message": "Netzwerkfehler: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1",
+        "example": "Failed to fetch"
+      }
+    }
+  },
+  "errorInvalidJson": {
+    "message": "Ungültiges JSON im Upload-Element"
+  },
+  "errorNoExtensionConnection": {
+    "message": "Keine Verbindung zur Erweiterung"
+  },
+  "errorNoExtensionReply": {
+    "message": "Keine Antwort von der Erweiterung"
+  },
+  "errorUnknown": {
+    "message": "Unbekannter Fehler"
+  },
+  "errorNoExtensionContext": {
+    "message": "Erweiterungskontext nicht verfügbar"
+  }
+}

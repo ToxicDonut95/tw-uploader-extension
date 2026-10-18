@@ -2,7 +2,7 @@
 
 Chrome Manifest V3 extension that automatically uploads Tribal Wars userscript data to the Toxic Donut portal API. Userscripts are no longer allowed to POST data themselves, so they publish upload envelopes into the page DOM and this extension picks them up, queues them, and delivers them to the backend with a per-account bearer token.
 
-No build step, no framework. Plain JavaScript.
+No build step, no framework. Plain JavaScript. The UI is translated with `chrome.i18n` (Dutch, English and German, default Dutch).
 
 ## Install (load unpacked)
 
@@ -14,11 +14,13 @@ No build step, no framework. Plain JavaScript.
 
 ## Account setup
 
-1. Open the popup. When a Tribal Wars game tab is active the server and world are prefilled from it; otherwise pick the server from the dropdown and type the world (e.g. `nl95`). Add your player name and click **Account toevoegen**.
+1. Open the popup. When a Tribal Wars game tab is active the server and world are prefilled from it; otherwise pick the server and then the world from the dropdowns (the world list comes from `GET /api/v1.0/portal/worlds?serverUrl=`). Add your player name and click **Account toevoegen**.
 2. The popup shows a verification code. Copy it and paste it into the personal text on your Tribal Wars profile.
 3. Click **Verifieer nu**. Once verified, queued uploads for that world and player are sent automatically.
 
 Expired tokens show a red **Verlopen** chip with an **Opnieuw verifiëren** button that requests a fresh code.
+
+Verified accounts show their read key with a copy button; scripts that read data from the portal need it. Every account has a **Verwijderen** button (click twice to confirm) that calls `DELETE /api/v1.0/portal/access/{accessId}` and removes the account locally, also when the backend answers 401 or 404. The popup footer links to the portal at https://portal.toxicdonut.dev.
 
 ## DOM contract for userscripts
 
@@ -69,7 +71,8 @@ Deduplication: items are deduped on the element uuid and on the combination `ser
 - Uploads go to `POST /api/v1.0/portal/upload` with `Authorization: Bearer <sessionToken>` for the matching verified account (world + playerId). The API base URL is a constant in `src/shared/constants.js`.
 - Persistent queue in `chrome.storage.local`, flushed on new items, on service worker startup, and every minute via `chrome.alarms`.
 - Retry backoff on network or server errors: 30s, 2m, 10m, 30m, then the item is marked failed.
-- A 401 or 403 marks the account as expired and the item waits until the account is verified again.
+- A 401 means the session expired: the account is marked expired (the popup shows **Opnieuw verifiëren**) and the item waits, without using a retry, until the account is verified again. A 403 does the same with an invalid token message. Other 4xx answers (409 validation, 413 too large) mark the item failed.
+- While an item is being sent its status is `Uploading`; items left in that state by a stopped service worker go back to the queue on the next flush.
 - The queue is capped at 200 items (oldest done or failed items are dropped first) and a log of the last 100 upload results feeds the popup's recent uploads list.
 - The toolbar badge shows the number of failed items plus items without a verified account.
 - The auto-upload toggle in the popup header pauses all uploading without losing the queue.
@@ -84,7 +87,9 @@ src/background/queue.js         persistent queue, retry, badge, log
 src/background/api.js           fetch wrappers for the portal API
 src/popup/popup.html|js|css     account management and upload log
 src/shared/constants.js         API base, enums, storage keys
-icons/                          placeholder icons
+src/shared/i18n.js              tdText helper around chrome.i18n.getMessage
+_locales/nl|en|de/messages.json  translations (default nl)
+icons/                          Toxic Donut logo
 ```
 
 ## Supported markets

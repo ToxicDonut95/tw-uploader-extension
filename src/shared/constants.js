@@ -1,5 +1,6 @@
 globalThis.TD = {
   API_BASE: 'https://api.toxicdonut.dev',
+  PORTAL_URL: 'https://portal.toxicdonut.dev',
   CLIENT_HEADER: 'X-TD-Client',
   CLIENT_NAME: 'extension',
   MessageType: {
@@ -8,7 +9,9 @@ globalThis.TD = {
     VerifyAccount: 3,
     ReRequestAccess: 4,
     FlushQueue: 5,
-    GetServers: 6
+    GetServers: 6,
+    GetWorlds: 7,
+    RemoveAccount: 8
   },
   UploadStatus: {
     Pending: 1,
