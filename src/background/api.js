@@ -41,6 +41,7 @@ async function send(path, method, body, token) {
   try {
     response = await fetch(globalThis.TD.API_BASE + path, {
       method,
+      credentials: 'omit',
       headers: requestHeaders(token, body !== undefined),
       body: body !== undefined ? JSON.stringify(body) : undefined
     });
