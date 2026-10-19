@@ -113,6 +113,9 @@
   "noAccounts": {
     "message": "Nog geen accounts. Voeg hieronder een account toe."
   },
+  "loadMoreUploads": {
+    "message": "Meer laden"
+  },
   "noUploads": {
     "message": "Nog geen uploads."
   },

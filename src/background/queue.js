@@ -195,6 +195,7 @@ export async function enqueue(envelope, elementId) {
       serverUrl: envelope.serverUrl,
       world: envelope.world,
       playerId: envelope.playerId,
+      playerName: envelope.playerName || '',
       envelope,
       attempts: 0,
       nextAttemptAt: 0,
@@ -297,7 +298,7 @@ async function flushOnce() {
     if (!account) {
       const error = text('errorNoVerifiedAccount');
       await updateItem(item.id, { status: TD.UploadStatus.NoAccount, error });
-      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: TD.UploadStatus.NoAccount, error });
+      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, playerId: item.playerId, playerName: item.playerName || item.envelope?.playerName || '', status: TD.UploadStatus.NoAccount, error });
       continue;
     }
 
@@ -340,7 +341,7 @@ async function flushOnce() {
     await updateItem(item.id, changes);
 
     if (changes.status !== TD.UploadStatus.Pending) {
-      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, status: changes.status, error: changes.error });
+      await appendLog({ timestamp: Date.now(), script: item.script, serverUrl: item.serverUrl, world: item.world, playerId: item.playerId, playerName: item.playerName || item.envelope?.playerName || '', status: changes.status, error: changes.error });
     }
   }
 

@@ -113,6 +113,9 @@
   "noAccounts": {
     "message": "Noch keine Konten. Füge unten ein Konto hinzu."
   },
+  "loadMoreUploads": {
+    "message": "Mehr laden"
+  },
   "noUploads": {
     "message": "Noch keine Uploads."
   },

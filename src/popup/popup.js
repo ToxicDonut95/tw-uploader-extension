@@ -1,6 +1,11 @@
 (function () {
   const accountsList = document.getElementById('accounts-list');
   const logList = document.getElementById('log-list');
+  const logMoreButton = document.getElementById('log-more');
+  const logPageSize = 10;
+  let visibleLogCount = logPageSize;
+  let lastLogEntries = [];
+  let lastAccounts = [];
   const messageBox = document.getElementById('message');
   const autoUploadToggle = document.getElementById('auto-upload-toggle');
   const addForm = document.getElementById('add-account-form');
@@ -236,10 +241,10 @@
     return date.toLocaleString(uiLocale());
   }
 
-  function formatTime(value) {
+  function formatDateTime(value) {
     const date = new Date(value);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString(uiLocale(), { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(uiLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 
   function buildCopyRow(value, copiedMessageKey, labelKey) {
@@ -404,40 +409,56 @@
     }
   }
 
-  function renderLog(logEntries) {
+  function logAccountName(entry, accounts) {
+    if (entry.playerName) return entry.playerName;
+    const worldAccounts = accounts.filter(function (candidate) {
+      return candidate.world === entry.world && serverMatches(candidate.serverUrl, entry.serverUrl);
+    });
+    const account = worldAccounts.find(function (candidate) {
+      return String(candidate.playerId) === String(entry.playerId);
+    }) || (worldAccounts.length === 1 ? worldAccounts[0] : null);
+    if (account) return account.playerName;
+    return entry.playerId !== undefined && entry.playerId !== null ? '#' + entry.playerId : '';
+  }
+
+  function renderLog(logEntries, accounts) {
+    lastLogEntries = logEntries;
+    lastAccounts = accounts;
     logList.textContent = '';
-    const recent = logEntries.slice(-20).reverse();
-    if (!recent.length) {
+    const newestFirst = logEntries.slice().reverse();
+    if (!newestFirst.length) {
       const emptyNote = document.createElement('div');
       emptyNote.classList.add('empty-note');
       emptyNote.textContent = text('noUploads');
       logList.appendChild(emptyNote);
+      logMoreButton.hidden = true;
       return;
     }
-    for (const entry of recent) {
+    for (const entry of newestFirst.slice(0, visibleLogCount)) {
       const row = document.createElement('div');
       row.classList.add('log-row');
+      row.title = [entry.serverUrl ? serverLabel(entry.serverUrl) : '', entry.error || ''].filter(Boolean).join(' – ');
+
       const time = document.createElement('span');
-      time.textContent = formatTime(entry.timestamp);
+      time.classList.add('log-time');
+      time.textContent = formatDateTime(entry.timestamp);
       const script = document.createElement('span');
+      script.classList.add('log-script');
       script.textContent = entry.script || '';
-      script.title = entry.error || '';
-      const server = document.createElement('span');
-      server.textContent = entry.serverUrl ? serverLabel(entry.serverUrl) : '';
-      server.title = entry.serverUrl || '';
-      const world = document.createElement('span');
-      world.textContent = entry.world || '';
+      const account = document.createElement('span');
+      account.classList.add('log-account');
+      account.textContent = [logAccountName(entry, accounts), entry.world].filter(Boolean).join(' · ');
       const status = document.createElement('span');
-      status.classList.add('log-status-' + entry.status);
+      status.classList.add('log-status', 'log-status-' + entry.status);
       status.textContent = uploadStatusLabel(entry.status);
-      status.title = entry.error || '';
+
       row.appendChild(time);
       row.appendChild(script);
-      row.appendChild(server);
-      row.appendChild(world);
+      row.appendChild(account);
       row.appendChild(status);
       logList.appendChild(row);
     }
+    logMoreButton.hidden = newestFirst.length <= visibleLogCount;
   }
 
   async function render() {
@@ -446,8 +467,13 @@
     const accounts = await readStorage(TD.StorageKeys.Accounts, []);
     renderAccounts(accounts);
     const logEntries = await readStorage(TD.StorageKeys.Log, []);
-    renderLog(logEntries);
+    renderLog(logEntries, accounts);
   }
+
+  logMoreButton.addEventListener('click', function () {
+    visibleLogCount += logPageSize;
+    renderLog(lastLogEntries, lastAccounts);
+  });
 
   autoUploadToggle.addEventListener('change', async function () {
     const settings = await readStorage(TD.StorageKeys.Settings, {});

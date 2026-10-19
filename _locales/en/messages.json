@@ -113,6 +113,9 @@
   "noAccounts": {
     "message": "No accounts yet. Add an account below."
   },
+  "loadMoreUploads": {
+    "message": "Load more"
+  },
   "noUploads": {
     "message": "No uploads yet."
   },

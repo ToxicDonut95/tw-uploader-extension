@@ -8,9 +8,10 @@
 <body>
   <header class="popup-header">
     <h1 data-i18n="extName">Toxic Donut Uploader</h1>
-    <label class="toggle-label">
-      <input type="checkbox" id="auto-upload-toggle">
+    <label class="switch">
       <span data-i18n="autoUpload">Automatisch uploaden</span>
+      <input type="checkbox" id="auto-upload-toggle" role="switch">
+      <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
     </label>
   </header>
 
@@ -39,6 +40,7 @@
   <section class="section">
     <h2 data-i18n="recentUploadsHeading">Recente uploads</h2>
     <div id="log-list"></div>
+    <button type="button" id="log-more" class="load-more-button" data-i18n="loadMoreUploads" hidden>Meer laden</button>
   </section>
 
   <footer class="popup-footer">
