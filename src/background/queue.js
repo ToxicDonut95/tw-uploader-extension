@@ -182,6 +182,12 @@ export async function enqueue(envelope, elementId) {
 
     dropForCapacity(items);
 
+    for (const item of items) {
+      if (item.status === TD.UploadStatus.Done && item.envelope) {
+        item.envelope = null;
+      }
+    }
+
     items.push({
       id,
       hash,
@@ -303,6 +309,7 @@ async function flushOnce() {
     if (result.status === 201) {
       changes.status = TD.UploadStatus.Done;
       changes.error = null;
+      changes.envelope = null;
     } else if (result.status === 401) {
       account.status = TD.AccountStatus.Expired;
       accountsChanged = true;
